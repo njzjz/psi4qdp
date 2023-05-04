@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=61", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "psiqdp"
+dynamic = ["version"]
+description = "Psi4 for QDPi"
+authors = [
+    { name = "Jinzhe Zeng", email = "jinzhe.zeng@rutgers.edu"},
+]
+license = { file = "LICENSE" }
+classifiers = [
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+]
+dependencies = [
+    'numpy',
+    'dpdata[ase]>=0.2.15',
+    'xtb',
+]
+requires-python = ">=3.7"
+readme = "README.md"
+keywords = ["dpdata", "psi4"]
+
+[project.urls]
+repository = "https://github.com/njzjz/psi4qdp"
+
+[project.optional-dependencies]
+
+[project.entry-points."console_scripts"]
+psi4qdp = "psi4qdp.main:cli"
+
+[project.entry-points."dpdata.plugins"]
+psi4qdp = "psi4qdp.psi4:Psi4Driver"
+
+[tool.setuptools.packages.find]
+include = ["psi4qdp*"]
+
+[tool.setuptools_scm]
+
+[tool.ruff]
+target-version = "py37"
+select = [
+    "E", # errors
+    "F", # pyflakes
+    "D", # pydocstyle
+    "UP", # pyupgrade
+    "I", # isort
+]
+ignore = [
+    "E501", # line too long
+    "F841", # local variable is assigned to but never used
+    "E741", # ambiguous variable name
+    "E402", # module level import not at top of file
+    "D413", # missing blank line after last section
+    "D416", # section name should end with a colon
+    "D203", # 1 blank line required before class docstring
+    "D107", # missing docstring in __init__
+    "D213", # multi-line docstring summary should start at the second line
+    "D100", # TODO: missing docstring in public module
+    "D101", # TODO: missing docstring in public class
+    "D102", # TODO: missing docstring in public method
+    "D103", # TODO: missing docstring in public function
+    "D104", # TODO: missing docstring in public package
+    "D105", # TODO: missing docstring in magic method
+    "D205", # 1 blank line required between summary line and description
+    "D401", # TODO: first line should be in imperative mood
+    "D404", # TODO: first word of the docstring should not be This
+]
+ignore-init-module-imports = true
