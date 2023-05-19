@@ -36,8 +36,8 @@ def calculate_correction(
     return hl_sys, ll_sys, corr_sys
 
 
-def run(args: argparse.Namespace):
-    """Run the correction calculation.
+def single_point(args: argparse.Namespace):
+    """Run the single-point calculation.
 
     Parameters
     ----------
@@ -47,7 +47,11 @@ def run(args: argparse.Namespace):
     input = dpdata.System(args.input, fmt="deepmd/hdf5")
     try:
         hl_sys, ll_sys, corr_sys = calculate_correction(input)
-    except (xtb.interface.XTBException, psi4.PsiException, ase.calculators.calculator.CalculationFailed) as e:
+    except (
+        xtb.interface.XTBException,
+        psi4.PsiException,
+        ase.calculators.calculator.CalculationFailed,
+    ) as e:
         traceback.print_stack()
         hl_sys = dpdata.LabeledSystem()
         ll_sys = dpdata.LabeledSystem()
@@ -58,6 +62,56 @@ def run(args: argparse.Namespace):
     print(hl_sys.data, ll_sys.data, corr_sys.data)
 
 
+def minimize(args: argparse.Namespace):
+    """Minimize and run the correction calculation.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        arguments
+    """
+    input = dpdata.System(args.input, fmt="deepmd/hdf5")
+    try:
+        hl_sys = input.minimize(minimizer="psi4/qdp")
+    except psi4.PsiException:
+        traceback.print_stack()
+        dpdata.LabeledSystem().to_deepmd_hdf5(args.high_level)
+        dpdata.LabeledSystem().to_deepmd_hdf5(args.low_level)
+        dpdata.LabeledSystem().to_deepmd_hdf5(args.output)
+        return
+    hl_sys.to_deepmd_hdf5(args.high_level)
+
+    try:
+        ll_driver = Driver.get_driver("ase")(XTB(method="GFN2-xTB"))
+        ll_sys = hl_sys.predict(driver=ll_driver)
+        corr_sys = ll_sys.correction(hl_sys)
+    except (
+        xtb.interface.XTBException,
+        ase.calculators.calculator.CalculationFailed,
+    ) as e:
+        traceback.print_stack()
+        dpdata.LabeledSystem().to_deepmd_hdf5(args.low_level)
+        dpdata.LabeledSystem().to_deepmd_hdf5(args.output)
+        return
+    ll_sys.to_deepmd_hdf5(args.low_level)
+    corr_sys.to_deepmd_hdf5(args.output)
+    print(hl_sys.data, ll_sys.data, corr_sys.data)
+
+
+def run(args: argparse.Namespace):
+    """Run the correction calculation.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        arguments
+    """
+    if args.opt:
+        minimize(args)
+    else:
+        single_point(args)
+
+
 def cli():
     parser = argparse.ArgumentParser()
 
@@ -65,6 +119,7 @@ def cli():
     parser.add_argument("output", type=str, help="output HDF5 file")
     parser.add_argument("high_level", type=str, help="output high-level HDF5 file")
     parser.add_argument("low_level", type=str, help="output low-level HDF5 file")
+    parser.add_argument("--opt", action="store_true", help="optimize the structure")
 
     parser.set_defaults(func=run)
 

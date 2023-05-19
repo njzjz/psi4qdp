@@ -40,6 +40,7 @@ psi4qdp = "psi4qdp.main:cli"
 
 [project.entry-points."dpdata.plugins"]
 psi4qdp = "psi4qdp.psi4:Psi4Driver"
+psi4qdpminimizer = "psi4qdp.psi4:Psi4Minimizer"
 
 [tool.setuptools.packages.find]
 include = ["psi4qdp*"]
