@@ -1,7 +1,11 @@
 import argparse
+import traceback
 from typing import Tuple
 
+import ase.calculators.calculator
 import dpdata
+import psi4
+import xtb.interface
 from dpdata.driver import Driver
 from xtb.ase.calculator import XTB
 
@@ -25,9 +29,9 @@ def calculate_correction(
     dpdata.LabeledSystem
         corrected system
     """
-    hl_sys = input.predict(driver="psi4/qdp")
     ll_driver = Driver.get_driver("ase")(XTB(method="GFN2-xTB"))
     ll_sys = input.predict(driver=ll_driver)
+    hl_sys = input.predict(driver="psi4/qdp")
     corr_sys = ll_sys.correction(hl_sys)
     return hl_sys, ll_sys, corr_sys
 
@@ -41,7 +45,13 @@ def run(args: argparse.Namespace):
         arguments
     """
     input = dpdata.System(args.input, fmt="deepmd/hdf5")
-    hl_sys, ll_sys, corr_sys = calculate_correction(input)
+    try:
+        hl_sys, ll_sys, corr_sys = calculate_correction(input)
+    except (xtb.interface.XTBException, psi4.PsiException, ase.calculators.calculator.CalculationFailed) as e:
+        traceback.print_stack()
+        hl_sys = dpdata.LabeledSystem()
+        ll_sys = dpdata.LabeledSystem()
+        corr_sys = dpdata.LabeledSystem()
     hl_sys.to_deepmd_hdf5(args.high_level)
     ll_sys.to_deepmd_hdf5(args.low_level)
     corr_sys.to_deepmd_hdf5(args.output)

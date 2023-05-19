@@ -24,7 +24,8 @@ class Psi4Driver(Driver):
 
     def label(self, data: dict) -> dict:
         """Label the system."""
-        psi4.set_memory("10 GB")
+        psi4.set_memory("8 GB")
+        psi4.set_num_threads(4)
         types = np.array(data["atom_names"])[data["atom_types"]]
         buff = [f"{self.charge} {self.multiplicity}"]
         for tt, cc in zip(types, data["coords"][0]):
