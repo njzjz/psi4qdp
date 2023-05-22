@@ -7,11 +7,13 @@ import dpdata
 import psi4
 import xtb.interface
 from dpdata.driver import Driver
-from xtb.ase.calculator import XTB
+
+from .xtb import XTB
 
 
 def calculate_correction(
     input: dpdata.System,
+    charge: int = 0,
 ) -> Tuple[dpdata.LabeledSystem, dpdata.LabeledSystem, dpdata.LabeledSystem]:
     """Calculate the correction for the input system.
 
@@ -19,6 +21,8 @@ def calculate_correction(
     ----------
     input : dpdata.System
         input system
+    charge : int, optional
+        net charge, by default 0
 
     Returns
     -------
@@ -29,9 +33,9 @@ def calculate_correction(
     dpdata.LabeledSystem
         corrected system
     """
-    ll_driver = Driver.get_driver("ase")(XTB(method="GFN2-xTB"))
+    ll_driver = Driver.get_driver("ase")(XTB(charge=charge, method="GFN2-xTB"))
     ll_sys = input.predict(driver=ll_driver)
-    hl_sys = input.predict(driver="psi4/qdp")
+    hl_sys = input.predict(driver="psi4/qdp", charge=charge)
     corr_sys = ll_sys.correction(hl_sys)
     return hl_sys, ll_sys, corr_sys
 
@@ -46,7 +50,7 @@ def single_point(args: argparse.Namespace):
     """
     input = dpdata.System(args.input, fmt="deepmd/hdf5")
     try:
-        hl_sys, ll_sys, corr_sys = calculate_correction(input)
+        hl_sys, ll_sys, corr_sys = calculate_correction(input, charge=args.charge)
     except (
         xtb.interface.XTBException,
         psi4.PsiException,
@@ -72,7 +76,7 @@ def minimize(args: argparse.Namespace):
     """
     input = dpdata.System(args.input, fmt="deepmd/hdf5")
     try:
-        hl_sys = input.minimize(minimizer="psi4/qdp")
+        hl_sys = input.minimize(minimizer="psi4/qdp", charge=args.charge)
     except psi4.PsiException:
         traceback.print_stack()
         dpdata.LabeledSystem().to_deepmd_hdf5(args.high_level)
@@ -82,7 +86,7 @@ def minimize(args: argparse.Namespace):
     hl_sys.to_deepmd_hdf5(args.high_level)
 
     try:
-        ll_driver = Driver.get_driver("ase")(XTB(method="GFN2-xTB"))
+        ll_driver = Driver.get_driver("ase")(XTB(charge=args.charge, method="GFN2-xTB"))
         ll_sys = hl_sys.predict(driver=ll_driver)
         corr_sys = ll_sys.correction(hl_sys)
     except (
@@ -120,6 +124,7 @@ def cli():
     parser.add_argument("high_level", type=str, help="output high-level HDF5 file")
     parser.add_argument("low_level", type=str, help="output low-level HDF5 file")
     parser.add_argument("--opt", action="store_true", help="optimize the structure")
+    parser.add_argument("--charge", type=int, default=0, help="net charge")
 
     parser.set_defaults(func=run)
 
