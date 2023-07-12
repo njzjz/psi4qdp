@@ -55,6 +55,8 @@ def single_point(args: argparse.Namespace):
         xtb.interface.XTBException,
         psi4.PsiException,
         ase.calculators.calculator.CalculationFailed,
+        RuntimeError,
+        Exception,
     ) as e:
         traceback.print_stack()
         hl_sys = dpdata.LabeledSystem()
@@ -77,7 +79,11 @@ def minimize(args: argparse.Namespace):
     input = dpdata.System(args.input, fmt="deepmd/hdf5")
     try:
         hl_sys = input.minimize(minimizer="psi4/qdp", charge=args.charge)
-    except psi4.PsiException:
+    except (
+        psi4.PsiException,
+        RuntimeError,
+        Exception,
+    ) as e:
         traceback.print_stack()
         dpdata.LabeledSystem().to_deepmd_hdf5(args.high_level)
         dpdata.LabeledSystem().to_deepmd_hdf5(args.low_level)
@@ -92,6 +98,7 @@ def minimize(args: argparse.Namespace):
     except (
         xtb.interface.XTBException,
         ase.calculators.calculator.CalculationFailed,
+        Exception,
     ) as e:
         traceback.print_stack()
         dpdata.LabeledSystem().to_deepmd_hdf5(args.low_level)

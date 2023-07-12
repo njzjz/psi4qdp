@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import psi4
 from dpdata.driver import Driver, Minimizer
@@ -26,7 +27,7 @@ class Psi4Driver(Driver):
     def label(self, data: dict) -> dict:
         """Label the system."""
         psi4.set_memory("8 GB")
-        psi4.set_num_threads(4)
+        psi4.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "4")))
         types = np.array(data["atom_names"])[data["atom_types"]]
         buff = [f"{self.charge} {self.multiplicity}"]
         for tt, cc in zip(types, data["coords"][0]):
