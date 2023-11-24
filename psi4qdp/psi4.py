@@ -1,6 +1,6 @@
 import os
+
 import numpy as np
-import psi4
 from dpdata.driver import Driver, Minimizer
 from dpdata.unit import EnergyConversion, ForceConversion, LengthConversion
 
@@ -26,6 +26,8 @@ class Psi4Driver(Driver):
 
     def label(self, data: dict) -> dict:
         """Label the system."""
+        import psi4
+
         if os.environ.get("SLURM_MEM_PER_NODE") is not None:
             memory = os.environ["SLURM_MEM_PER_NODE"] + " MB"
             psi4.set_memory(memory)
@@ -64,6 +66,8 @@ class Psi4Minimizer(Minimizer):
 
     def minimize(self, data: dict) -> dict:
         """Label the system."""
+        import psi4
+
         psi4.set_memory("8 GB")
         psi4.set_num_threads(4)
         types = np.array(data["atom_names"])[data["atom_types"]]
