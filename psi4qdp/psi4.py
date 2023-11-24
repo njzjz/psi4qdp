@@ -26,7 +26,11 @@ class Psi4Driver(Driver):
 
     def label(self, data: dict) -> dict:
         """Label the system."""
-        psi4.set_memory("8 GB")
+        if os.environ.get("SLURM_MEM_PER_NODE") is not None:
+            memory = os.environ["SLURM_MEM_PER_NODE"] + " MB"
+            psi4.set_memory(memory)
+        else:
+            psi4.set_memory("8 GB")
         psi4.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "4")))
         types = np.array(data["atom_names"])[data["atom_types"]]
         buff = [f"{self.charge} {self.multiplicity}"]
